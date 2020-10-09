@@ -1,10 +1,12 @@
-/* JSONPath 0.8.5 - XPath for JSON
+/* JSONPath 0.8.5+ - XPath for JSON
  *
  * Copyright (c) 2007 Stefan Goessner (goessner.net)
+ * Copyright (c) 2020 jpaquit
  * Licensed under the MIT (MIT-LICENSE.txt) licence.
  *
- * Proposal of Chris Zyp goes into version 0.9.x
- * Issue 7 resolved
+ * https://github.com/jpaquit/jsonpath/tree/0.8.5-%2B-regexp
+ * 2020/01/09 - Add a patch to enable conditional regex as in jayway jsonpath ("=~")
+ *
  */
 function jsonPath(obj, expr, arg) {
    var P = {
@@ -44,7 +46,7 @@ function jsonPath(obj, expr, arg) {
                P.trace(P.eval(loc, val, path.substr(path.lastIndexOf(";")+1))+";"+x, val, path);
             else if (/^\?\(.*?\)$/.test(loc)) /* [?(expr)] */
                P.walk(loc, x, val, path, function(m,l,x,v,p) { if (P.eval(l.replace(/^\?\((.*?)\)$/,"$1"), v instanceof Array ? v[m] : v, m)) P.trace(m+";"+x,v,p); }); /* issue 5 resolved */
-            else if (/^(-?[0-9]*):(-?[0-9]*):?([0-9]*)$/.test(loc)) / [start:end:step]  /* python slice syntax */
+            else if (/^(-?[0-9]*):(-?[0-9]*):?([0-9]*)$/.test(loc)) /* [start:end:step]  python slice syntax */
                P.slice(loc, x, val, path);
             else if (/,/.test(loc)) { /* [name1,name2,...] */
                for (var s=loc.split(/'?,'?/),i=0,n=s.length; i<n; i++)
@@ -77,8 +79,16 @@ function jsonPath(obj, expr, arg) {
          }
       },
       eval: function(x, _v, _vname) {
-         try { return $ && _v && eval(x.replace(/(^|[^\\])@/g, "$1_v").replace(/\\@/g, "@")); }  /* issue 7 : resolved */
-         catch(e) { throw new SyntaxError("jsonPath: " + e.message + ": " + x.replace(/(^|[^\\])@/g, "$1_v").replace(/\\@/g, "@")); }  /* issue 7 : resolved */
+         try { return $ && _v && eval(x.replace(/(^|[^\\])@/g, "$1_v")
+                                       .replace(/\\@/g, "@") /* issue 7 : resolved .. */
+                                       .replace(/(_v(?:(?!(\|\||&&)).)*)=~((?:(?!\)* *(\|\||&&)).)*)/g, function(match, p1, p2, p3, offset, currentString) { return match ? p3.trim()+'.test('+p1.trim()+')' : match}) /* 2020/01/09 - manage regexp syntax "=~" */
+                                     );
+             }
+         catch(e) { throw new SyntaxError("jsonPath: " + e.message + ": " + x.replace(/(^|[^\\])@/g, "$1_v")
+                                                                             .replace(/\\@/g, "@") /* issue 7 : resolved .. */
+		                                                       			     .replace(/(_v(?:(?!(\|\||&&)).)*)=~((?:(?!\)* *(\|\||&&)).)*)/g, function(match, p1, p2, p3, offset, currentString) { return match ? p3.trim()+'.test('+p1.trim()+')' : match}) /* 2020/01/09 - manage regexp syntax "=~" */
+		                                 );
+                  }
       }
    };
 
@@ -87,4 +97,4 @@ function jsonPath(obj, expr, arg) {
       P.trace(P.normalize(expr).replace(/^\$;?/,""), obj, "$");  /* issue 6 resolved */
       return P.result.length ? P.result : false;
    }
-} 
+}
