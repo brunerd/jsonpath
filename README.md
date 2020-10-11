@@ -333,6 +333,5 @@ Hat tip to [cburgmer](https://github.com/cburgmer) for providing the bones of th
 ## References
 [Stefan Gössner](https://goessner.net/articles/JsonPath/) and his initial work on the concept of JSONPath.
 
-Christoph Burgmer's [Proposal A](https://github.com/cburgmer/json-path-comparison/blob/master/proposals/Proposal_A/README.md) and his [JSON Path comparison](https://cburgmer.github.io/json-path-comparison/) matrix
-A vast collection of open source JSONPath implementations with all their their varying behaviors.
-
+Christoph Burgmer's [Proposal A](https://github.com/cburgmer/json-path-comparison/blob/master/proposals/Proposal_A/README.md) and his [JSON Path comparison](https://cburgmer.github.io/json-path-comparison/) matrix  
+A vast collection of open source JSONPath implementations with all their varying behaviors.
