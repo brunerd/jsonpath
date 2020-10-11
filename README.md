@@ -303,7 +303,7 @@ Hat tip to [cburgmer](https://github.com/cburgmer) for providing the bones of th
     ComparisonOperator
       ::= "=="
         | "!="
-    	| "==="
+        | "==="
         | "!=="
         | "=~"
         | "<="
