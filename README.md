@@ -1,13 +1,13 @@
 # brunerd JSONPath
 
 Another take on the [JSONPath](https://goessner.net/articles/JsonPath/) query language by Stefan Goessner.
-The engine is purposefully written in ES5 for the broadest compatibility.
-The normalize engine has been reworked to parse a path expression into an array. Previously the path was expressed internally as a semi-colon delimited string, which meant keys with semi-colons would fail and also allowed for many invalid expressions to slip by.  
+This engine is purposefully written in ES5 for the broadest compatibility.
 
 Notable enhancements include:  
 - Arrays can now be referenced with positive *and* negative integers
 - Slice now allows a negative step integer, script expressions and can now operate on arrays *and* strings
 - Property names can be referenced using Unicode `\u` escape sequences
+- Queries with sloppy or invalid syntax are no longer allowed
 - Property names containing `;` and `]` are no longer inaccessible, no more gotchas
 - Path output for JSONPath with options for dot style property names and single or double quote bracket styles
 - Path output in RFC6901 JSON Pointer style
