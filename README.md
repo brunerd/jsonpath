@@ -206,9 +206,10 @@ Always an array. Empty or otherwise. The original implementation returns false f
 ### JSONPath `expr` internal representation:
 Within `jsonpath()` the `expr` string is parsed into an array containing strings, numbers, and objects (with a single property of "expression")
 
-JSONPath example:
-`$[*][(@.length/2)]["key"][?(@.subKey == 'cool')][0]` this expression is converted internally to an array: 
-`[{"expression":"*"},{"expression":"(@.length/2)"},"key",{"expression":"?(@.subKey == \"cool\")"},0]`
+JSONPath example, the expression:
+`$[*][(@.length/2)]["key"][?(@.subKey == 'cool')][0][0:(@.length/3)]` 
+Is converted internally to an array, expressed here as JSON: 
+`[{"expression":"*"},{"expression":"(@.length/2)"},"key",{"expression":"?(@.subKey == \"cool\")"},0,{"expression":[0,{"expression":"(@.length/3)"},null]}]`
 
 An array of this same format can be passed into `jsonpath()` directly.  
 Since JSON Pointer is so easily parsed, this allows for jsonpath() to be given an `expr` array derived from JSON Pointer.
