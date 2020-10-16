@@ -1,17 +1,16 @@
 # brunerd JSONPath
 
 Another take on the [JSONPath](https://goessner.net/articles/JsonPath/) query language by Stefan Goessner.
-This engine is purposefully written in ES5 for the broadest compatibility.
+This engine is purposefully written in ES5 for the broadest compatibility and is an integral part of my other tool the [`jpt`](https://github.com/brunerd/jpt)  (JSON Power Tool)
 
 Notable enhancements include:  
 - Arrays can now be referenced with positive *and* negative integers
-- Slice now allows a negative step integer, script expressions and can now operate on arrays *and* strings
-- Property names can be referenced using Unicode `\u` escape sequences
+- Slice can now operate on arrays *and* strings and also allows a negative step integer
+- Property names can be quoted with either single or double quotes and `\u` Unicode escape sequences resolved
 - Queries with sloppy or invalid syntax are no longer allowed
 - Property names containing `;` and `]` are no longer inaccessible, no more gotchas
-- Path output for JSONPath with options for dot style property names and single or double quote bracket styles
-- Path output in RFC6901 JSON Pointer style
-- Unions can now contain any and all valid JSONPath expressions as well as mixed quoting styles
+- New path output options for: dot style paths, single or double quoted brackets, and even RFC6901 JSON Pointer output
+- Unions may now contain any and all valid JSONPath expressions
 
 ## JSONPath Syntax
 
