@@ -1,4 +1,4 @@
-// JSONPath 0.9.10 (no comments) - XPath for JSON
+// JSONPath 0.9.11 - XPath for JSON
 // Copyright (c) 2020 Joel Bruner (https://github.com/brunerd)
 // Copyright (c) 2020 "jpaquit" (https://github.com/jpaquit)
 // Copyright (c) 2007 Stefan Goessner (goessner.net)
@@ -83,8 +83,13 @@ function jsonPath(obj, expr, arg) {
 							if (needsDelimiter && !isSlice) { Level2Regex.lastIndex=subLastLastIndex; break; } else { needsDelimiter=true }
 							if (isSlice && intraSlice) { intraSlice=false }
 
-							try {!eval(L2Match[4])} catch(e){throw new Error(e + ": " + L2Match[4])}
-							pendingData.unshift(Number(L2Match[4]))
+							if (L2Match[4] !== "0" && (L2Match[4][0] === "0" || (L2Match[4][0] === "-" && L2Match[4][1] === "0"))){
+								throw new Error("Octals are disallowed: " + L2Match[4])
+							}
+							else{
+								pendingData.unshift(Number(L2Match[4]))
+							}
+							
 						}
 						else if(L2Match[5]){
 							if (needsDelimiter) { Level2Regex.lastIndex=subLastLastIndex; break; } else { needsDelimiter=true }
@@ -205,7 +210,6 @@ function jsonPath(obj, expr, arg) {
 					else { break }
 				}
 				lastLastIndex=Level1Regex.lastIndex
-
 			} while(Level1Regex.lastIndex !== 0 && Level1Regex.lastIndex !== revExpr.length )
 	
 			if (!hasRoot || baldRecursion || Level1Regex.lastIndex !== revExpr.length) { throw new SyntaxError("Malformed path expression: " + expr) }
@@ -235,6 +239,9 @@ function jsonPath(obj, expr, arg) {
 			return p;
 		},
 		store: function(p, v) {
+			if (P.escapeUnicode && v !== null && v.constructor === String){
+				v = v.replace(/[\u007F-\uFFFF]/g, function(chr) { return "\\u" + ("0000" + chr.charCodeAt(0).toString(16)).slice(-4) })
+			}				
 
 			if (p) { P.result[P.result.length] = /^PATH/.test(P.resultType) ? P.asPath(p) : v }
 			return !!p;
