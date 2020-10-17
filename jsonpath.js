@@ -1,4 +1,4 @@
-// JSONPath 0.9.10 - XPath for JSON
+// JSONPath 0.9.11 - XPath for JSON
 // Copyright (c) 2020 Joel Bruner (https://github.com/brunerd)
 // Copyright (c) 2020 "jpaquit" (https://github.com/jpaquit)
 // Copyright (c) 2007 Stefan Goessner (goessner.net)
@@ -110,10 +110,14 @@ function jsonPath(obj, expr, arg) {
 							if (needsDelimiter && !isSlice) { Level2Regex.lastIndex=subLastLastIndex; break; } else { needsDelimiter=true }
 							if (isSlice && intraSlice) { intraSlice=false }
 
-							//eval in strict to catch octals, regex limits characters here, so eval is safe
-							try {!eval(L2Match[4])} catch(e){throw new Error(e + ": " + L2Match[4])}
-							//subArray.unshift(Number(L2Match[4]))
-							pendingData.unshift(Number(L2Match[4]))
+							//catch octals by using type coercion
+							if (L2Match[4] !== "0" && (L2Match[4][0] === "0" || (L2Match[4][0] === "-" && L2Match[4][1] === "0"))){
+								throw new Error("Octals are disallowed: " + L2Match[4])
+							}
+							else{
+								pendingData.unshift(Number(L2Match[4]))
+							}
+							
 						}
 						//(-) - from JSON Pointer, represents the index AFTER the last one, always non-existent
 						else if(L2Match[5]){
@@ -277,7 +281,6 @@ function jsonPath(obj, expr, arg) {
 				}
 				//to catch later if we skip ahead from a bad match or not...
 				lastLastIndex=Level1Regex.lastIndex
-
 			} while(Level1Regex.lastIndex !== 0 && Level1Regex.lastIndex !== revExpr.length )
 	
 			if (!hasRoot || baldRecursion || Level1Regex.lastIndex !== revExpr.length) { throw new SyntaxError("Malformed path expression: " + expr) }
@@ -311,6 +314,10 @@ function jsonPath(obj, expr, arg) {
 			return p;
 		},
 		store: function(p, v) {
+			//if we are escaping unicode and a string
+			if (P.escapeUnicode && v !== null && v.constructor === String){
+				v = v.replace(/[\u007F-\uFFFF]/g, function(chr) { return "\\u" + ("0000" + chr.charCodeAt(0).toString(16)).slice(-4) })
+			}				
 
 			if (p) { P.result[P.result.length] = /^PATH/.test(P.resultType) ? P.asPath(p) : v }
 			return !!p;
