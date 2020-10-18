@@ -11,6 +11,7 @@ Notable enhancements include:
 - Property names containing `;` and `]` are no longer inaccessible, no more gotchas
 - New path output options for: dot style paths, single or double quoted brackets, and even RFC6901 JSON Pointer output
 - Unions may now contain any and all valid JSONPath expressions
+- Octal indices are disallowed, however octals (both old and new syntax) can be used in script and filter expressions along with any other valid JS expressions EXCEPT function invocations (apart from test/match/exec)
 
 ## JSONPath Syntax
 
@@ -306,11 +307,18 @@ Hat tip to [cburgmer](https://github.com/cburgmer) for providing the bones of th
         | "==="
         | "!=="
         | "=~"
-        | "<="
-        | ">="
         | "<"
         | ">"
-
+        | "<="
+        | ">="
+        | "<<"
+        | ">>"
+        | ">>>"
+        | "&"
+        | "^"
+        | "|"
+        | "instanceof"
+        
     FilterValue
       ::= "@" ScalarOperator*
         | "$" ScalarOperator*
