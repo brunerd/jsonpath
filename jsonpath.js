@@ -1,4 +1,4 @@
-// JSONPath 0.9.12 - XPath for JSON
+// JSONPath 0.9.13 - XPath for JSON
 // Copyright (c) 2020 Joel Bruner (https://github.com/brunerd)
 // Copyright (c) 2020 "jpaquit" (https://github.com/jpaquit)
 // Copyright (c) 2007 Stefan Goessner (goessner.net)
@@ -331,7 +331,7 @@ function jsonPath(obj, expr, arg) {
 				var x = expr.slice()
 				var loc = x.shift();
 
-				if(val !== null && Array.isArray(val) && loc.constructor === String && loc.match(/^0/)){
+				if(val !== null && Array.isArray(val) && loc.constructor === String && loc.match(/^0/) && loc !== "0"){
 					throw new Error("Property name '"+ loc +"' is a string with leading zeros and target is an array!")
 				}
 				else if(val !== null && val.constructor === Object && loc.constructor === Number){
