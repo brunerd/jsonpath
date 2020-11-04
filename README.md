@@ -24,7 +24,7 @@ JSONPath Expression | Description
 `..*` or `..[*]`| Wildcard operator with recursive descent explodes the contents of your JSON quite well
 `()`| A script expression uses the returned value of the expression to as the property name or index
 `?()`| A filter expression interrogates all array/object members against the expression, descending into or returning the value of those that match
-`@` | Use inside a filter or script expression. `@` is substituted with the value of the current object, `@name` will match the current property name, `@.length` will reference the length of an array or string, `@.key` will reference the property "key" of the current object
+`@` | Use inside a filter or script expression. `@` is substituted with the value of the current object, `@name` will match the current property name, `@.length` will reference the length of an array or string, `@.key`, `@["key"]`, or `@['key']` would reference the property named "key" of the current object, `@[1]` would be used for an array 
 `[]`| Subscript/child operator; can contain quoted property names (`'key'`,`"key"`), numbers (negative or positive), filter and script expressions, `*` and `-` operators
 `[start:end:step]`| Array/string slice operator like Python's, all field are optional, start and end default to bounds, step can be negative
 `[,]`| Union operator `,` allows multiple quoted key names, array indices, slices, script/filter expressions, and `*` to be combined
@@ -221,9 +221,7 @@ expr = expr.split('/')
 expr.shift()
 //replace special symbols ~1 and ~0 (in this order) with the actual characters
 //convert string representations of numbers to Number types (for proper quoting in PATH output)
-expr = expr.map(function (f){
-	return f.replace(/~1/g,"/").replace(/~0/g,"~") })
-		.map(function(a){ return a === "" ? "" : isNaN(a) ? a : Number(a)})
+expr = expr.map(function (f){ return f.replace(/~1/g,"/").replace(/~0/g,"~") })
 ```
 
 JSON Pointer example:
