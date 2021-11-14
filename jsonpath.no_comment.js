@@ -1,5 +1,5 @@
-// JSONPath 0.9.13 (no comments) - XPath for JSON
-// Copyright (c) 2020 Joel Bruner (https://github.com/brunerd)
+// JSONPath 0.9.14 (no comments) - XPath for JSON
+// Copyright (c) 2021 Joel Bruner (https://github.com/brunerd)
 // Copyright (c) 2020 "jpaquit" (https://github.com/jpaquit)
 // Copyright (c) 2007 Stefan Goessner (goessner.net)
 // Licensed under the MIT License
@@ -7,7 +7,6 @@
 //Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 //The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 //THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
 
 function jsonPath(obj, expr, arg) {
 	var P = {
@@ -73,7 +72,7 @@ function jsonPath(obj, expr, arg) {
 						else if(L2Match[2]){
 							if (needsDelimiter) { Level2Regex.lastIndex=subLastLastIndex; break; } else { needsDelimiter=true }
 							if (intraSlice) { break }
-							pendingData.unshift(L2Match[2].replace(/\\'/g,"'").replace(/\\"/g,'"').replace(/\\n/g,'\n').replace(/\\b/g,'\b').replace(/\\f/g,'\f').replace(/\\r/g,'\r').replace(/\\t/g,'\t').replace(/\\u([0-9a-fA-F]{4})/g,function($0,$1){return String.fromCharCode(parseInt($1,16))}))
+							pendingData.unshift(JSON.parse('"'+(L2Match[1] === "'" ? L2Match[2].replace(/\\'/g,"'").replace(/\"/g,"\\\"") : L2Match[2])+'"',null,0))
 						}
 						else if(L2Match[3]){
 							if (needsDelimiter) { Level2Regex.lastIndex=subLastLastIndex; break; } else { needsDelimiter=true }
@@ -229,12 +228,7 @@ function jsonPath(obj, expr, arg) {
 					p += "/" + (x[i].constructor === Number ? x[i] : x[i].replace(/~/g,"~0").replace(/\//g,"~1"))
 				}
 				else {
-					var pathString = x[i].constructor === Number ? "["+x[i]+"]" : (P.resultType === "PATH_DOTTED" && /^[A-Za-z_$][\w\d$]*$/.test(x[i]) ? "." + x[i] : ("["+ qt + (P.singleQuoteKeys ? x[i].replace(/'/g,"\\'") : x[i].replace(/"/g,'\\"')) + qt + "]").replace(/\n/g,'\\n').replace(/[\b]/g,'\\b').replace(/\f/g,'\\f').replace(/\r/g,'\\r').replace(/\t/g,'\\t').replace(/[\u0000-\u001f\u007f]/g, function(chr) {return "\\u" + ("0000" + chr.charCodeAt(0).toString(16)).slice(-4)}));
-
-					if (P.escapeUnicode){
-						pathString = pathString.replace(/[\u007F-\uFFFF]/g, function(chr) { return "\\u" + ("0000" + chr.charCodeAt(0).toString(16)).slice(-4) })
-					}
-					p += pathString
+					p += x[i].constructor === Number ? "["+x[i]+"]" : (P.resultType === "PATH_DOTTED" && /^[A-Za-z_$][\w\d$]*$/.test(x[i]) ? "." + x[i] : ("["+ qt + x[i].replace((P.escapeUnicode ? /[\u0000-\u001f\u007f-\uffff|\\|"|']/g : /[\u0000-\u001f\u007f|\\|"|']/g), function(chr) { switch(chr) { case '\b': return "\\b"; case '\f': return "\\f"; case '\n': return "\\n"; case '\r': return "\\r"; case '\t': return "\\t";case '\\': return "\\\\";case '"': return (P.singleQuoteKeys ? "\"" : "\\\"" );case '\'': return (P.singleQuoteKeys ? "\\'" : "'" );default: return "\\u" + ("0000" + chr.charCodeAt(0).toString(16)).slice(-4);}}) + qt + "]"));
 				}
 			}
 			return p;
@@ -259,10 +253,7 @@ function jsonPath(obj, expr, arg) {
 				if(val !== null && Array.isArray(val) && loc.constructor === String && loc.match(/^0/) && loc !== "0"){
 					throw new Error("Property name '"+ loc +"' is a string with leading zeros and target is an array!")
 				}
-				else if(val !== null && val.constructor === Object && loc.constructor === Number){
-					throw new Error("Property '"+ loc +"' is a number and target is an object!")
-				}
-
+				
 				if(loc.constructor === Number && Math.sign(loc) === -1 && (val instanceof Array || val.constructor === String)) { 
 					loc = (val.length+loc) 
 				}
@@ -424,7 +415,8 @@ function jsonPath(obj, expr, arg) {
 			}
 			catch(e) { 
 				throw new SyntaxError("eval: " + e.message + ": " + x.replace(/(^|[^\\])@/g, "$1_v")
-					.replace(/\\@/g, "@")
+					.replace(/\\@/g, "@") /* issue 7 : resolved .. */
+					/* 2020/01/09 - manage regexp syntax "=~" */
 					.replace(/(_v(?:(?!(\|\||&&)).)*)=~((?:(?!\)* *(\|\||&&)).)*)/g, 
 						function(match, p1, p2, p3, offset, currentString) { 
 							return match ? p3.trim()+'.test('+p1.trim()+')' : match
