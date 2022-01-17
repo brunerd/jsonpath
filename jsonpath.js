@@ -1,4 +1,4 @@
-// JSONPath 0.9.14 - XPath for JSON
+// JSONPath 0.9.15 - XPath for JSON
 // Copyright (c) 2021 Joel Bruner (https://github.com/brunerd)
 // Copyright (c) 2020 "jpaquit" (https://github.com/jpaquit)
 // Copyright (c) 2007 Stefan Goessner (goessner.net)
@@ -386,7 +386,7 @@ function jsonPath(obj, expr, arg) {
 				}
 				//else we are either a number or string
 				//if val is truthy and loc exists, keep tracing
-				else if (val && val[loc] !== undefined) {
+				else if (val && val.constructor !== String && val[loc] !== undefined) {
 					var tpath = path.slice()
 					//if this is an array, store loc as Number so it is NOT quoted in PATH or PATH_DOTTED output
 					tpath.push(Array.isArray(val) ? Number(loc) : loc)
@@ -417,17 +417,8 @@ function jsonPath(obj, expr, arg) {
 		},
 		//slice - same behavior as Python
 		slice: function(loc, expr, val, path) {
-
-			//now allows for string slicing
-			if (val !== null && val.constructor === String) {
-				val = val.split('')
-				var isString=true
-			} else { var isString=false }
-
 			if (val instanceof Array) {
 				var str="", len, start, end, step=1;
-
-				//if the loc array has any undefined holes set them to null
 				loc[0]=loc[0] !== undefined ? loc[0] : null; loc[1]=loc[1] !== undefined ? loc[1] : null; loc[2]=loc[2] !== undefined ? loc[2] : null
 
 				if ((loc[2] === null || loc[2].constructor === Number ? loc[2] : P.eval(loc[2].expression,val,path[path.length-1])) === 0) { 
@@ -440,36 +431,22 @@ function jsonPath(obj, expr, arg) {
 				if(Math.sign(step) === -1){
 					len=val.length, start=len-1, end=(len+(loc[1] === null ? 1 : 0))*(-1)
 				}
-				else{
+				else {
 					len=val.length, start=0, end=len
 				}
 
-				start=parseInt((loc[0] === null || loc[0].constructor === Number ? loc[0] : P.eval(loc[0].expression,val,path[path.length-1]))||((loc[0] === null || loc[0].constructor === Number ? loc[0] : P.eval(loc[0].expression,val,path[path.length-1])) === 0 ? 0 : start));
+				start = parseInt((loc[0] === null || loc[0].constructor === Number ? loc[0] : P.eval(loc[0].expression,val,path[path.length-1]))||((loc[0] === null || loc[0].constructor === Number ? loc[0] : P.eval(loc[0].expression,val,path[path.length-1])) === 0 ? 0 : start));
 				end = (loc[1] === 0) ? 0 : parseInt((loc[1] === null || loc[1].constructor === Number ? loc[1] : P.eval(loc[1].expression,val,path[path.length-1]))||end)
 
-				//adjust the bounds of the default depending on the value and the type of step in cases of negative values
 				start = (start < 0) ? Math.max(Math.sign(step) === -1 ? -1 : 0,start+len) : Math.min(len,start);
 				end = (end < 0) ? Math.max(Math.sign(step) === -1 ? -1 : 0,end+len) : Math.min(len,end);
 
-				//if step is negative go the other way
 				if(Math.sign(step) === -1){ var op=">" } else { var op="<" }
 
-				//use eval to resolve op 
 				for (var i=start; eval(i+op+end); i+=step){
-					//strore arrays proper
-					if(!isString){ 
-						var texpr = expr.slice()
-						texpr.unshift(i)
-						P.trace(texpr, val, path);
-					}
-					//collect characters into a string
-					else{
-						str += val[i] 
-					}
-				}
-				//store combined sliced string along with this single path
-				if(isString){ 
-					P.store(path, str);
+					var texpr = expr.slice()
+					texpr.unshift(i)
+					P.trace(texpr, val, path);
 				}
     		}
 		},
