@@ -1,4 +1,4 @@
-// JSONPath 0.9.14 (no comments) - XPath for JSON
+// JSONPath 0.9.15 (no comments) - XPath for JSON
 // Copyright (c) 2021 Joel Bruner (https://github.com/brunerd)
 // Copyright (c) 2020 "jpaquit" (https://github.com/jpaquit)
 // Copyright (c) 2007 Stefan Goessner (goessner.net)
@@ -298,7 +298,7 @@ function jsonPath(obj, expr, arg) {
 						});
 					}
 				}
-				else if (val && val[loc] !== undefined) {
+				else if (val && val.constructor !== String && val[loc] !== undefined) {
 					var tpath = path.slice()
 					tpath.push(Array.isArray(val) ? Number(loc) : loc)
 					P.trace(x, val[loc], tpath);
@@ -325,15 +325,8 @@ function jsonPath(obj, expr, arg) {
 			}
 		},
 		slice: function(loc, expr, val, path) {
-
-			if (val !== null && val.constructor === String) {
-				val = val.split('')
-				var isString=true
-			} else { var isString=false }
-
 			if (val instanceof Array) {
 				var str="", len, start, end, step=1;
-
 				loc[0]=loc[0] !== undefined ? loc[0] : null; loc[1]=loc[1] !== undefined ? loc[1] : null; loc[2]=loc[2] !== undefined ? loc[2] : null
 
 				if ((loc[2] === null || loc[2].constructor === Number ? loc[2] : P.eval(loc[2].expression,val,path[path.length-1])) === 0) { 
@@ -346,11 +339,11 @@ function jsonPath(obj, expr, arg) {
 				if(Math.sign(step) === -1){
 					len=val.length, start=len-1, end=(len+(loc[1] === null ? 1 : 0))*(-1)
 				}
-				else{
+				else {
 					len=val.length, start=0, end=len
 				}
 
-				start=parseInt((loc[0] === null || loc[0].constructor === Number ? loc[0] : P.eval(loc[0].expression,val,path[path.length-1]))||((loc[0] === null || loc[0].constructor === Number ? loc[0] : P.eval(loc[0].expression,val,path[path.length-1])) === 0 ? 0 : start));
+				start = parseInt((loc[0] === null || loc[0].constructor === Number ? loc[0] : P.eval(loc[0].expression,val,path[path.length-1]))||((loc[0] === null || loc[0].constructor === Number ? loc[0] : P.eval(loc[0].expression,val,path[path.length-1])) === 0 ? 0 : start));
 				end = (loc[1] === 0) ? 0 : parseInt((loc[1] === null || loc[1].constructor === Number ? loc[1] : P.eval(loc[1].expression,val,path[path.length-1]))||end)
 
 				start = (start < 0) ? Math.max(Math.sign(step) === -1 ? -1 : 0,start+len) : Math.min(len,start);
@@ -359,17 +352,9 @@ function jsonPath(obj, expr, arg) {
 				if(Math.sign(step) === -1){ var op=">" } else { var op="<" }
 
 				for (var i=start; eval(i+op+end); i+=step){
-					if(!isString){ 
-						var texpr = expr.slice()
-						texpr.unshift(i)
-						P.trace(texpr, val, path);
-					}
-					else{
-						str += val[i] 
-					}
-				}
-				if(isString){ 
-					P.store(path, str);
+					var texpr = expr.slice()
+					texpr.unshift(i)
+					P.trace(texpr, val, path);
 				}
     		}
 		},
