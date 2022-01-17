@@ -24,7 +24,7 @@ JSONPath Expression | Description
 `..*` or `..[*]`| Wildcard operator with recursive descent explodes the contents of your JSON quite well
 `()`| A script expression uses the returned value of the expression to as the property name or index
 `?()`| A filter expression interrogates all array/object members against the expression, descending into or returning the value of those that match
-`@` | Use inside a filter or script expression. `@` is substituted with the value of the current object, `@name` will match the current property name, `@.length` will reference the length of an array or string, `@.key`, `@["key"]`, or `@['key']` would reference the property named "key" of the current object, `@[1]` would be used for an array 
+`@` | Use inside a filter or script expression. `@` is substituted with the current object, `@.length` gets the length of either an array or string. Property names of object can be referenced like `@.key`, `@["key"]`, or `@['key']`, and `@[1]` gets an array element. `@name` will match the current property (this is a useful quirk from the origianl Goessner code)
 `[]`| Subscript/child operator; can contain quoted property names (`'key'`,`"key"`), numbers (negative or positive), filter and script expressions, `*` and `-` operators
 `[start:end:step]`| Array/string slice operator like Python's, all field are optional, start and end default to bounds, step can be negative
 `[,]`| Union operator `,` allows multiple quoted key names, array indices, slices, script/filter expressions, and `*` to be combined
