@@ -5,7 +5,7 @@ This engine is purposefully written in ES5 for the broadest compatibility and is
 
 Notable enhancements include:  
 - Arrays can now be referenced with positive *and* negative integers
-- Slice can now operate on arrays *and* strings and also allows a negative step integer
+- Slice operates on arrays only and allows the use of a negative step integer and script expressions
 - Property names can be quoted with either single or double quotes and `\u` Unicode escape sequences resolved
 - Queries with sloppy or invalid syntax are no longer allowed
 - Property names containing `;` and `]` are no longer inaccessible, no more gotchas
@@ -26,7 +26,7 @@ JSONPath Expression | Description
 `?()`| A filter expression interrogates all array/object members against the expression, descending into or returning the value of those that match
 `@` | Use inside a filter or script expression. `@` is substituted with the current object, `@.length` gets the length of either an array or string. Property names of object can be referenced like `@.key`, `@["key"]`, or `@['key']`, and `@[1]` gets an array element. `@name` will match the current property (this is a useful quirk from the origianl Goessner code)
 `[]`| Subscript/child operator; can contain quoted property names (`'key'`,`"key"`), numbers (negative or positive), filter and script expressions, `*` and `-` operators
-`[start:end:step]`| Array/string slice operator like Python's, all field are optional, start and end default to bounds, step can be negative
+`[start:end:step]`| Array slice operator like Python's, all field are optional, start and end default to bounds, step can be negative, filter expressions can be used
 `[,]`| Union operator `,` allows multiple quoted key names, array indices, slices, script/filter expressions, and `*` to be combined
 `[-]`| One _after_ the last element in an array, borrowed from JSON Pointer, used for JSON creation only (not retrieval)
 
