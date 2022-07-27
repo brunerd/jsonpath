@@ -1,4 +1,4 @@
-// JSONPath 0.9.15 (no comments) - XPath for JSON
+// JSONPath 0.9.16 (no comments)- XPath for JSON
 // Copyright (c) 2021 Joel Bruner (https://github.com/brunerd)
 // Copyright (c) 2020 "jpaquit" (https://github.com/jpaquit)
 // Copyright (c) 2007 Stefan Goessner (goessner.net)
@@ -242,14 +242,14 @@ function jsonPath(obj, expr, arg) {
 			return !!p;
 		},
 		trace: function(expr, val, path) {
-
 			if(expr === false) return expr
 
 			if (expr.length) {
-
+				
 				var x = expr.slice()
 				var loc = x.shift();
 
+				
 				if(val !== null && Array.isArray(val) && loc.constructor === String && loc.match(/^0/) && loc !== "0"){
 					throw new Error("Property name '"+ loc +"' is a string with leading zeros and target is an array!")
 				}
@@ -292,7 +292,7 @@ function jsonPath(obj, expr, arg) {
 					}
 					else if (/^\?\(.*?\)$/.test(loc.expression)){
 						P.walk(loc.expression, x, val, path, function(m,l,x,v,p) {
-							if (P.eval(l.replace(/^\?\((.*?)\)$/,"$1"), v instanceof Array ? v[m] : v, m)) {
+							if (P.eval(l.replace(/^\?\((.*?)\)$/,"$1"), v instanceof Array ? v[m] : v, m) !== undefined) {
 								var tx = x.slice(); tx.unshift(m); P.trace(tx,v,p);
 							} 
 						});
@@ -390,13 +390,7 @@ function jsonPath(obj, expr, arg) {
 						}
 					)
 				);
-
-				if(evalResult === undefined || evalResult === null || (evalResult.constructor === Number && Math.sign(evalResult) === -1) ) { 
-					return false 
-				}
-				else {
-					return evalResult.constructor === Number ? Math.floor(evalResult) : evalResult
-				}
+				return evalResult
 			}
 			catch(e) { 
 				throw new SyntaxError("eval: " + e.message + ": " + x.replace(/(^|[^\\])@/g, "$1_v")
