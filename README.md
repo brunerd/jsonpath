@@ -3,7 +3,9 @@
 Another take on the [JSONPath](https://goessner.net/articles/JsonPath/) query language by Stefan Goessner.
 This engine is purposefully written in ES5 for the broadest compatibility and is an integral part of my other tool the [`jpt`](https://github.com/brunerd/jpt)  (JSON Power Tool)
 
-Notable enhancements include:  
+Behavior of this engine is subject to change once the [IETF JSONPath spec](https://datatracker.ietf.org/doc/draft-ietf-jsonpath-base/) is finalized. Some of the changes will be: removal of script expressions, filter expressions will be called "filter selectors" and not require the entire expression to be enclosed by `?()` it will also have limits on what operators can be used (currently all valid Javascript exressions are allowed in this version). There will also be limits to what regexp expressions will be allowed as well.
+
+Notable enhancements from the original engine include:  
 - Arrays can now be referenced with positive *and* negative integers
 - Slice operates on arrays only and allows the use of a negative step integer and script expressions
 - Property names can be quoted with either single or double quotes and `\u` Unicode escape sequences resolved
