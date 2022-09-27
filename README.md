@@ -30,7 +30,7 @@ JSONPath Expression | Description
 `[]`| Subscript/child operator; can contain quoted property names (`'key'`,`"key"`), numbers (negative or positive), filter and script expressions, `*` and `-` operators
 `[start:end:step]`| Array slice operator like Python's, all field are optional, start and end default to bounds, step can be negative, filter expressions can be used
 `[,]`| Union operator `,` allows multiple quoted key names, array indices, slices, script/filter expressions, and `*` to be combined
-`[-]`| One _after_ the last element in an array, borrowed from JSON Pointer, used for JSON creation only (not retrieval)
+`["-"]`| One _after_ the last element in an array, borrowed from JSON Pointer, used for JSON creation only (not retrieval)
 
 ## Example queries:
 Use with the sample store.json data found below...
