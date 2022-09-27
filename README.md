@@ -50,8 +50,7 @@ JSONPath Query| Description
 `$..book[?(@.price <= $["expensive"])]` | All books less than or equal to the 'expensive' property
 `$..book[?(@.price > $.expensive)]` | All books more than the 'expensive' property
 `$["store"]..price` | The price of everything in the store
-`$..book[?(@.comment)]` | Filter all books with a "comment" property containing data
-`$..book[?(@.comment !== undefined)]` | Filter all books with a "comment" property
+`$..book[?(@.comment)]` | Filter all books with a "comment" property
 `$.store.book[?(@.comment_hidden)]` | Filter books with the "comment_hidden" property
 `$..book[2]` | The third book (zero based array)
 `$..book[-1]` | The last book via negative index
