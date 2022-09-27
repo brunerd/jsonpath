@@ -1,4 +1,4 @@
-// JSONPath 0.9.16 - XPath for JSON
+// JSONPath 0.9.17 - XPath for JSON
 // Copyright (c) 2021 Joel Bruner (https://github.com/brunerd)
 // Copyright (c) 2020 "jpaquit" (https://github.com/jpaquit)
 // Copyright (c) 2007 Stefan Goessner (goessner.net)
@@ -22,8 +22,181 @@ function jsonPath(obj, expr, arg) {
 		escapeUnicode: arg && arg.escapeUnicode || false,
 		result: [],
 		normalize: function(expr) {
+			//fix non-comparison @ paths in filters like: "?(@.a || @['b'])" rewriting as ?(@.a!==undefined || @.b!==undefined)
+			//fix negation ! by adding surrounding parens "?(@.a && !@['b'])" rewrites as ?(@.a!==undefined && !(@.b!==undefined))
+			function fixFilterString(str) {
+				//turn into an array
+				str = str.split('');
 
-			//work on strings only, pass through all others (like a pre-objectified path array)
+				//a few of the modes we can be in
+				var mode = {
+					inDoubleQuote: false,
+					inSingleQuote: false,
+					inEscape: false,
+					inRegexp: false,
+					//either @ or $
+					inPath: false,
+					inKeyName: false,
+					inBracket: false,
+				};
+
+				//last character of significance for a path name
+				var lastPathChar
+				var comparatorOp=false
+				var negationCount=0
+				var parenStack=[]
+		
+				//process string
+				for (var i=0; i < str.length; i++) {
+
+					//if not a keyname break out before we go
+					if (mode.inKeyName && !/[$_A-Za-z0-9.]/.test(str[i])){
+						mode.inKeyName=false
+					}
+
+					//ignore anything in quotes ' "
+					if (mode.inDoubleQuote || mode.inSingleQuote) {   
+						if (mode.inEscape) { mode.inEscape = false }
+						else if (str[i] === '"' && mode.inDoubleQuote) { mode.inDoubleQuote = false; }
+						else if (str[i] === "'" && mode.inSingleQuote){ mode.inSingleQuote = false; }
+						else if (str[i] === '\\' ) { mode.inEscape = true }
+					}
+					//ignore whatever is inside a /.../ style regex (JSON Pointer RFC uses I-regex)
+					else if (mode.inRegexp){
+						if (mode.inEscape) { mode.inEscape = false }
+						//forward slash / IS allowed in brackets
+						else if (str[i] === '[') { mode.inBracket=true }
+						else if (str[i] === ']') { mode.inBracket=false	}
+						else if (str[i] === '/' && !mode.inBracket) { mode.inRegexp = false }
+						else if (str[i] === '\\' ) { mode.inEscape = true }
+					}
+					//record our last place
+					else if(mode.inKeyName){
+						lastPathChar=i			
+					}
+					//beginning of JSON string in " quote ' quote
+					else if (str[i] === '"' || str[i] === "'") {
+						if (str[i] === '"'){ mode.inDoubleQuote = true; }
+						else { mode.inSingleQuote = true; }
+						lastPathChar = i
+					}
+					//beginning of a absolute or relative path, only dot and index (bracket) selectors allowed
+					else if (str[i] === '$' || str[i] === '@') {
+						//set this var
+						lastPathChar = i
+		
+						//beginning of dot child key
+						if (str[i+1] === '.') {
+							mode.inKeyName=true
+							lastPathChar=i				
+						}	
+					}
+					//end of bracket
+					else if (str[i] === ']') {
+						lastPathChar=i
+						mode.inBracket=false
+						//wow should we test for bracket or . next?
+						//test the next
+						if (str[i+1] === "."){
+							mode.inKeyName=true
+							i++
+						}		
+					}
+					//if we are not in a double quote then this should mean this is a regex
+					else if (str[i] === '/' ) {
+						mode.inRegexp = true
+					}
+					//if ==, !=, <=, or >=
+					else if ((str[i] === '=' || str[i] === '!' || str[i] === '<' || str[i] === '>' || str[i] === '=' ) && str[i+1] === '=' ) {
+						//reset
+						lastPathChar=undefined
+						//advance 1 for the equal sign
+						i=i+1
+						mode.inPath=false
+						comparatorOp=true
+					}
+					//or just < or >
+					else if (str[i] === '<' || str[i] === '>') {
+						//reset
+						lastPathChar=undefined
+						mode.inPath=false
+						comparatorOp=true
+					}
+					//or regex =~
+					else if (str[i] === '=' && str[i+1] === '~' ) {
+						//reset
+						lastPathChar=undefined
+						mode.inPath=false
+						comparatorOp=true
+
+						//advance 1
+						i=i+1
+					}
+					//booleans: &&, ||
+					else if ((str[i] === '&' && str[i+1] === '&') || (str[i] === '|' && str[i+1] === '|' )) {
+						//if this wasn't reset then it never had a comparison applied
+						if (comparatorOp != true && lastPathChar !== undefined) {
+							//insert !== undefined into array after lastPathChar
+							str.splice((lastPathChar+1),0,"!==undefined")
+							i++
+						}
+						mode.inPath=false
+						comparatorOp=false  	
+				
+						//close out negation !( with )
+						if(negationCount){					
+							for (var loop=0; loop<negationCount; negationCount--){
+								str.splice(i,0,")")
+								i++
+							}
+						}
+					}
+					else if(str[i] === '!'){
+						//insert (
+						str.splice(i+1,0,"(")
+						negationCount++
+						i++
+					}
+					//a paren beginning
+					else if(str[i] === '('){				
+						//store value in stack
+						parenStack.unshift(negationCount)
+						//reset count
+						negationCount=0
+					}
+					//a paren beginning
+					else if(str[i] === ')'){
+						//close out 
+						if(negationCount){					
+							for (var loop=0; loop<negationCount; negationCount--){
+								str.splice(i+1,0,")")
+								i++
+							}
+						}	
+						//get any previous values in stack
+						negationCount=parenStack.shift()
+					}
+
+					//end of for loop for str -2 as we currently expect parens surrounding all
+					if(i == (str.length-2)){
+						if(comparatorOp != true && lastPathChar !== undefined) {
+							//insert at the end
+							str.splice((lastPathChar+1),0,"!==undefined")
+							i++
+						}				
+						//insert remaining ) at the end
+						if(negationCount){
+							//insert (
+							for (var loop=0; loop<negationCount; negationCount--){
+								str.splice(i+1,0,")")
+								i++
+							}
+						}
+					}
+				}
+				var finalString = str.join('')
+				return finalString
+			}			//work on strings only, pass through all others (like a pre-objectified path array)
 			if (expr.constructor === null || expr.constructor !== String) { return expr }
 
 			var pathStack=[]
@@ -118,6 +291,7 @@ function jsonPath(obj, expr, arg) {
 								pendingData.unshift(Number(L2Match[4]))
 							}
 						}
+						//WOW - this should really not be allowed, only quoted ["-"] or ['-']
 						//(-) - from JSON Pointer, represents the index AFTER the last one, always non-existent
 						else if(L2Match[5]){
 							if (needsDelimiter) { Level2Regex.lastIndex=subLastLastIndex; break; } else { needsDelimiter=true }
@@ -178,8 +352,8 @@ function jsonPath(obj, expr, arg) {
 								//keep working on revExpr
 								L3Match = Level3Regex.exec(revExpr)
 
-								//(["'])(.*?)\1(?!\\) - quoted string
-								//escape @ for substitution in P.eval
+								//" or ' - quoted string (["'])(.*?)\1(?!\\)
+								//escape @ in strings for substitution in P.eval
 								if(L3Match[1]) { 
 									filterText+=L3Match[0].replace(/@/g, "@\\")
 								}
@@ -206,17 +380,19 @@ function jsonPath(obj, expr, arg) {
 								}
 								//(.) - any other character
 								else if(L3Match[9]) { 
-									//if this is a = assignment (not != <= >=) break, =~ regex is matched earlier
+									//if this is a = assignment (not != <= >=) break, == and =~ regex is matched earlier
 									if(L3Match[9] === "=" && !/[<>!]/.test(revExpr[Level3Regex.lastIndex])) { 
 										break
 									}
 									filterText+=L3Match[9]
 								}
 
+								//currently assuming filter expression is always in parens (pre-IETF draft)
+								//if they are even break
 								if (closeParens === openParens){
 									needsDelimiter=true
 
-									//before we break check if the next char is a question mark and if so include that
+									//check if the next char is a filter expression question mark (e.g. $[?(<expr>)])
 									if(revExpr[Level3Regex.lastIndex] === '?'){
 										if(isSlice){
 											Level3Regex.lastIndex=0
@@ -229,9 +405,8 @@ function jsonPath(obj, expr, arg) {
 									//set our Level2Regex index to where we were in this
 									Level2Regex.lastIndex = Level3Regex.lastIndex
 									//reverse back to normal and store this in the array of items
-									var filterTextFinal = filterText.split('').reverse().join('')
+									var filterTextFinal = fixFilterString(filterText.split('').reverse().join(''))
 									pendingData.unshift({"expression":filterTextFinal})
-
 									break;
 								}
 							} while (Level3Regex.lastIndex !== 0 && Level3Regex.lastIndex !== revExpr.length)
@@ -378,10 +553,10 @@ function jsonPath(obj, expr, arg) {
 							P.trace(tx, val, path);
 						}
 					}
-					//?(expr) - a filter expression, this tests an expression and if true will descend into that key or return it's value
-					else if (/^\?\(.*?\)$/.test(loc.expression)){
+					//? - a filter expression, this tests an expression and if true will descend into that key or return it's value
+					else if (/^\?/.test(loc.expression)){
 						P.walk(loc.expression, x, val, path, function(m,l,x,v,p) {
-							if (P.eval(l.replace(/^\?\((.*?)\)$/,"$1"), v instanceof Array ? v[m] : v, m) !== undefined) {
+							if (P.eval(l.replace(/^\?/,""), v instanceof Array ? v[m] : v, m)) {
 								var tx = x.slice(); tx.unshift(m); P.trace(tx,v,p);
 							} 
 						});
@@ -457,8 +632,9 @@ function jsonPath(obj, expr, arg) {
 
 			var tx = x.slice()
 
+			//WOW this should not be needed, parens have no effect leave them if present
 			//if this is a () expression, strip the outer parens
-			if ((/^\(.*?\)$/).test(x)) { tx = tx.replace((/^\((.*?)\)$/),"$1") }
+			//if ((/^\(.*?\)$/).test(x)) { tx = tx.replace((/^\((.*?)\)$/),"$1") }
 
 			//remove all all data between "" '' and //, split by semi-colon
 			//remove all spaces before ( and collapse multiple spaces down to a single space
