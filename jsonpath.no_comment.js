@@ -1,4 +1,4 @@
-// JSONPath 0.9.16 (no comments)- XPath for JSON
+// JSONPath 0.9.17 (no comments) - XPath for JSON
 // Copyright (c) 2021 Joel Bruner (https://github.com/brunerd)
 // Copyright (c) 2020 "jpaquit" (https://github.com/jpaquit)
 // Copyright (c) 2007 Stefan Goessner (goessner.net)
@@ -15,7 +15,138 @@ function jsonPath(obj, expr, arg) {
 		escapeUnicode: arg && arg.escapeUnicode || false,
 		result: [],
 		normalize: function(expr) {
+			function fixFilterString(str) {
+				str = str.split('');
 
+				var mode = {
+					inDoubleQuote: false,
+					inSingleQuote: false,
+					inEscape: false,
+					inRegexp: false,
+					inPath: false,
+					inKeyName: false,
+					inBracket: false,
+				};
+
+				var lastPathChar
+				var comparatorOp=false
+				var negationCount=0
+				var parenStack=[]
+		
+				for (var i=0; i < str.length; i++) {
+
+					if (mode.inKeyName && !/[$_A-Za-z0-9.]/.test(str[i])){
+						mode.inKeyName=false
+					}
+
+					if (mode.inDoubleQuote || mode.inSingleQuote) {   
+						if (mode.inEscape) { mode.inEscape = false }
+						else if (str[i] === '"' && mode.inDoubleQuote) { mode.inDoubleQuote = false; }
+						else if (str[i] === "'" && mode.inSingleQuote){ mode.inSingleQuote = false; }
+						else if (str[i] === '\\' ) { mode.inEscape = true }
+					}
+					else if (mode.inRegexp){
+						if (mode.inEscape) { mode.inEscape = false }
+						else if (str[i] === '[') { mode.inBracket=true }
+						else if (str[i] === ']') { mode.inBracket=false	}
+						else if (str[i] === '/' && !mode.inBracket) { mode.inRegexp = false }
+						else if (str[i] === '\\' ) { mode.inEscape = true }
+					}
+					else if(mode.inKeyName){
+						lastPathChar=i			
+					}
+					else if (str[i] === '"' || str[i] === "'") {
+						if (str[i] === '"'){ mode.inDoubleQuote = true; }
+						else { mode.inSingleQuote = true; }
+						lastPathChar = i
+					}
+					else if (str[i] === '$' || str[i] === '@') {
+						lastPathChar = i
+		
+						if (str[i+1] === '.') {
+							mode.inKeyName=true
+							lastPathChar=i				
+						}	
+					}
+					else if (str[i] === ']') {
+						lastPathChar=i
+						mode.inBracket=false
+						if (str[i+1] === "."){
+							mode.inKeyName=true
+							i++
+						}		
+					}
+					else if (str[i] === '/' ) {
+						mode.inRegexp = true
+					}
+					else if ((str[i] === '=' || str[i] === '!' || str[i] === '<' || str[i] === '>' || str[i] === '=' ) && str[i+1] === '=' ) {
+						lastPathChar=undefined
+						i=i+1
+						mode.inPath=false
+						comparatorOp=true
+					}
+					else if (str[i] === '<' || str[i] === '>') {
+						lastPathChar=undefined
+						mode.inPath=false
+						comparatorOp=true
+					}
+					else if (str[i] === '=' && str[i+1] === '~' ) {
+						lastPathChar=undefined
+						mode.inPath=false
+						comparatorOp=true
+
+						i=i+1
+					}
+					else if ((str[i] === '&' && str[i+1] === '&') || (str[i] === '|' && str[i+1] === '|' )) {
+						if (comparatorOp != true && lastPathChar !== undefined) {
+							str.splice((lastPathChar+1),0,"!==undefined")
+							i++
+						}
+						mode.inPath=false
+						comparatorOp=false  	
+				
+						if(negationCount){					
+							for (var loop=0; loop<negationCount; negationCount--){
+								str.splice(i,0,")")
+								i++
+							}
+						}
+					}
+					else if(str[i] === '!'){
+						str.splice(i+1,0,"(")
+						negationCount++
+						i++
+					}
+					else if(str[i] === '('){				
+						parenStack.unshift(negationCount)
+						negationCount=0
+					}
+					else if(str[i] === ')'){
+						if(negationCount){					
+							for (var loop=0; loop<negationCount; negationCount--){
+								str.splice(i+1,0,")")
+								i++
+							}
+						}	
+						negationCount=parenStack.shift()
+					}
+
+					if(i == (str.length-2)){
+						if(comparatorOp != true && lastPathChar !== undefined) {
+							str.splice((lastPathChar+1),0,"!==undefined")
+							i++
+						}				
+						if(negationCount){
+							for (var loop=0; loop<negationCount; negationCount--){
+								str.splice(i+1,0,")")
+								i++
+							}
+						}
+					}
+				}
+				var finalString = str.join('')
+				return finalString
+			}			//work on strings only, pass through all others (like a pre-objectified path array)
 			if (expr.constructor === null || expr.constructor !== String) { return expr }
 
 			var pathStack=[]
@@ -170,9 +301,8 @@ function jsonPath(obj, expr, arg) {
 									}
 
 									Level2Regex.lastIndex = Level3Regex.lastIndex
-									var filterTextFinal = filterText.split('').reverse().join('')
+									var filterTextFinal = fixFilterString(filterText.split('').reverse().join(''))
 									pendingData.unshift({"expression":filterTextFinal})
-
 									break;
 								}
 							} while (Level3Regex.lastIndex !== 0 && Level3Regex.lastIndex !== revExpr.length)
@@ -242,6 +372,7 @@ function jsonPath(obj, expr, arg) {
 			return !!p;
 		},
 		trace: function(expr, val, path) {
+			
 			if(expr === false) return expr
 
 			if (expr.length) {
@@ -290,9 +421,9 @@ function jsonPath(obj, expr, arg) {
 							P.trace(tx, val, path);
 						}
 					}
-					else if (/^\?\(.*?\)$/.test(loc.expression)){
+					else if (/^\?/.test(loc.expression)){
 						P.walk(loc.expression, x, val, path, function(m,l,x,v,p) {
-							if (P.eval(l.replace(/^\?\((.*?)\)$/,"$1"), v instanceof Array ? v[m] : v, m) !== undefined) {
+							if (P.eval(l.replace(/^\?/,""), v instanceof Array ? v[m] : v, m)) {
 								var tx = x.slice(); tx.unshift(m); P.trace(tx,v,p);
 							} 
 						});
@@ -362,7 +493,6 @@ function jsonPath(obj, expr, arg) {
 
 			var tx = x.slice()
 
-			if ((/^\(.*?\)$/).test(x)) { tx = tx.replace((/^\((.*?)\)$/),"$1") }
 
 			var forbiddenInvocations=tx.split('').reverse().join('')
 				.replace(/(["'])(.*?)\1(?!\\)/g, "")
@@ -419,3 +549,4 @@ function jsonPath(obj, expr, arg) {
 		return P.result.length ? P.result : [];
 	}
 }
+
