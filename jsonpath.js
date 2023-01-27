@@ -1,4 +1,4 @@
-// JSONPath 0.9.17 - XPath for JSON
+// JSONPath 0.9.18 - XPath for JSON
 // Copyright (c) 2021 Joel Bruner (https://github.com/brunerd)
 // Copyright (c) 2020 "jpaquit" (https://github.com/jpaquit)
 // Copyright (c) 2007 Stefan Goessner (goessner.net)
@@ -515,7 +515,7 @@ function jsonPath(obj, expr, arg) {
 				//an array represents a union, it can store: strings (key names), numbers (array indices or numeric property names), and objects (expressions)
 				//example: ["key",0,{"expression":"*"},{"expression":"?(@name =~ /key.*/)"}]
 				if(Array.isArray(loc)){
-					for (i=0; i<loc.length; i++) {
+					for (var i=0; i<loc.length; i++) {
 						var tx = x.slice()
 						tx.unshift(loc[i])
 						P.trace(tx, val, path)
