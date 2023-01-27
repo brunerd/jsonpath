@@ -1,4 +1,4 @@
-// JSONPath 0.9.17 (no comments) - XPath for JSON
+// JSONPath 0.9.18 (no comments) - XPath for JSON
 // Copyright (c) 2021 Joel Bruner (https://github.com/brunerd)
 // Copyright (c) 2020 "jpaquit" (https://github.com/jpaquit)
 // Copyright (c) 2007 Stefan Goessner (goessner.net)
@@ -390,7 +390,7 @@ function jsonPath(obj, expr, arg) {
 				}
 
 				if(Array.isArray(loc)){
-					for (i=0; i<loc.length; i++) {
+					for (var i=0; i<loc.length; i++) {
 						var tx = x.slice()
 						tx.unshift(loc[i])
 						P.trace(tx, val, path)
