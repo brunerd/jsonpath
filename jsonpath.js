@@ -1,4 +1,4 @@
-// JSONPath 0.9.18 - XPath for JSON
+// JSONPath 0.9.19 - XPath for JSON
 // Copyright (c) 2021 Joel Bruner (https://github.com/brunerd)
 // Copyright (c) 2020 "jpaquit" (https://github.com/jpaquit)
 // Copyright (c) 2007 Stefan Goessner (goessner.net)
@@ -563,8 +563,8 @@ function jsonPath(obj, expr, arg) {
 					}
 				}
 				//else we are either a number or string
-				//if val is truthy and loc exists, keep tracing
-				else if (val && val.constructor !== String && val[loc] !== undefined) {
+				//if val is truthy, not a string, val[loc] exists and is not a function (i.e. Object.values()), keep tracing
+				else if (val && val.constructor !== String && val[loc] !== undefined && typeof val[loc] !== "function") {
 					var tpath = path.slice()
 					//if this is an array, store loc as Number so it is NOT quoted in PATH or PATH_DOTTED output
 					tpath.push(Array.isArray(val) ? Number(loc) : loc)
@@ -572,6 +572,7 @@ function jsonPath(obj, expr, arg) {
 				}
 			}
 			//else no expr left, just store the results along with it's path
+			//for some reason a key with the name "values" will create a function as a result?! Ignore it.
 			else {
 				P.store(path, val);
 			}
@@ -631,10 +632,6 @@ function jsonPath(obj, expr, arg) {
 		eval: function(x, _v, _vname) {
 
 			var tx = x.slice()
-
-			//WOW this should not be needed, parens have no effect leave them if present
-			//if this is a () expression, strip the outer parens
-			//if ((/^\(.*?\)$/).test(x)) { tx = tx.replace((/^\((.*?)\)$/),"$1") }
 
 			//remove all all data between "" '' and //, split by semi-colon
 			//remove all spaces before ( and collapse multiple spaces down to a single space
