@@ -1,4 +1,4 @@
-// JSONPath 0.9.18 (no comments) - XPath for JSON
+// JSONPath 0.9.19 (no comments) - XPath for JSON
 // Copyright (c) 2021 Joel Bruner (https://github.com/brunerd)
 // Copyright (c) 2020 "jpaquit" (https://github.com/jpaquit)
 // Copyright (c) 2007 Stefan Goessner (goessner.net)
@@ -7,6 +7,7 @@
 //Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 //The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 //THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 
 function jsonPath(obj, expr, arg) {
 	var P = {
@@ -429,7 +430,7 @@ function jsonPath(obj, expr, arg) {
 						});
 					}
 				}
-				else if (val && val.constructor !== String && val[loc] !== undefined) {
+				else if (val && val.constructor !== String && val[loc] !== undefined && typeof val[loc] !== "function") {
 					var tpath = path.slice()
 					tpath.push(Array.isArray(val) ? Number(loc) : loc)
 					P.trace(x, val[loc], tpath);
@@ -493,7 +494,6 @@ function jsonPath(obj, expr, arg) {
 
 			var tx = x.slice()
 
-
 			var forbiddenInvocations=tx.split('').reverse().join('')
 				.replace(/(["'])(.*?)\1(?!\\)/g, "")
 				.replace(/(\/.*?\/(?!\\)\s*~=)|(=~*\s\/.*?\/(?!\\))/g, "")
@@ -549,4 +549,3 @@ function jsonPath(obj, expr, arg) {
 		return P.result.length ? P.result : [];
 	}
 }
-
